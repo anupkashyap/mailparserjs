@@ -1,0 +1,15 @@
+.header-container{
+    width: 100%;
+    height: 20%;
+    display: flex;
+    justify-content:space-around;
+}
+.header-section{
+    width: 80%;
+    height: 100%;
+    justify-content:center;
+    display: flex;
+    font-size: 5rem;
+    font-family: 'Aileron', sans-serif;
+    color: #fff;
+}

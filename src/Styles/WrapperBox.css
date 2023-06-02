@@ -1,0 +1,11 @@
+.wrapper_box{
+    width:65vw;
+    height:70vh;
+    min-width: 500px;
+    min-height:300px;
+    /* background:#bb98ff; */
+    background-image: linear-gradient(to bottom right, rgba(203,90,77,0.2), rgba(203,90,77,0.9));
+    padding: 1%;
+    border-radius:2%;
+    box-shadow: 10px 10px 5px #010101;
+}

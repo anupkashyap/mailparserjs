@@ -1,0 +1,71 @@
+.Main{
+    height: 75%;
+    width: 95%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 1%;
+    padding: 1%;
+}
+
+.GoogleLogin{
+    height: 100%;
+    display: flex;
+    justify-content:space-around;
+    align-items:center;
+
+}
+
+.Controls{
+    height: 50%;
+    width: 60%;
+    font-family: 'Aileron', sans-serif;
+    color: #fff;
+    padding: auto;
+
+}
+
+.Controls-checkboxes{
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.Config{
+    display: flex;
+    justify-content:center;
+    flex-direction:column;
+}
+#outlined-basic{
+    color: white!important;
+    font-size:small;
+}
+label.MuiFormLabel-root{
+    color: white!important;
+}
+
+.Download{
+    display:flex;
+    justify-content:center;
+}
+
+.Download-spinner{
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background: rgb(0,0,0,0.5);
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.LoggedInUser{
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+}
+

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Web site created using create-react-app" />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+  <title>mailParser.js</title>
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="root"></div>
+  <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+</body>
+
+</html>
+
+<script>
+  let tokenClient;
+  let gapiInited = false;
+  let gisInited = false;
+  function gapiLoaded() {
+    gapi.load('client', initializeGapiClient);
+  }
+  async function initializeGapiClient() {
+    await gapi.client.init({
+      apiKey: window.API_KEY,
+      discoveryDocs: [window.DISCOVERY_DOC],
+    });
+    gapiInited = true;
+    maybeEnableButtons();
+  }
+  function gisLoaded() {
+    setTimeout(() => {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: window.CLIENT_ID,
+        scope: window.SCOPES,
+        callback: '', // defined later
+      });
+      gisInited = true;
+      maybeEnableButtons();
+    }, 300)
+
+  }
+
+  /**
+   * Enables user interaction after all libraries are loaded.
+   */
+  function maybeEnableButtons() {
+    if (gapiInited && gisInited) {
+      //document.getElementById('authorize_button').style.visibility = 'visible';
+    }
+  }
+
+  /**
+   *  Sign in the user upon button click.
+   */
+  window.handleAuthClick = () => {
+    return new Promise((resolve, reject) => {
+      tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) {
+          throw (resp);
+        }
+        profile = await gapi.client.gmail.users.getProfile({
+          'userId': 'me'
+        })
+        resolve(profile);
+      };
+
+      if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      } else {
+        tokenClient.requestAccessToken({ prompt: '' });
+      }
+    })
+
+  }
+
+  const getDateXMonthsAgo = months => new Date(new Date().setMonth(new Date().getMonth() - months)).toISOString().split('T')[0];
+
+  window.getEmails = async (configSettings) => new Promise(async (resolve, reject) => {
+    emailResponses = [];
+    let nextPageToken = null;
+
+    while (true) {
+      try {
+        response = await gapi.client.gmail.users.messages.list({
+          'userId': 'me',
+          'q': 'in:inbox ' + configSettings.q + ' after: ' + getDateXMonthsAgo(configSettings.months),
+          'pageToken': nextPageToken
+        });
+      } catch (err) {
+        document.getElementById('content').innerText = err.message;
+        return;
+      }
+      nextPageToken = response.result.nextPageToken;
+      batch = gapi.client.newBatch();
+      response.result.messages.forEach(function (emailId) {
+        var request = gapi.client.gmail.users.messages.get({
+          'userId': 'me',
+          'id': emailId.id
+        });
+
+        batch.add(request, { 'id': emailId.id });
+      });
+
+      await batch.then(function (response2) {
+        response.result.messages.forEach(function (emailId) {
+          var emailResponse = response2.result[emailId.id];
+          try {
+            if (emailResponse.hasOwnProperty('error')) {
+              console.error('Error occurred while fetching email with ID', emailId);
+            } else {
+              emailResponses.push(emailResponse.result);
+            }
+          }
+          catch (e) {
+            //console.log(emailResponse)
+          }
+
+          //emailResponses.push(emailResponse.result);
+        });
+        //console.log('Emails found:', emailResponses);
+
+      });
+      if (!nextPageToken) {
+        //break;
+        resolve(emailResponses);
+        break;
+      }
+
+    }
+
+  });
+
+
+
+  let tempDivElement;
+  window.convertToPlain = (html) => {
+
+    if (!tempDivElement)
+      tempDivElement = document.createElement("div");
+
+    // Set the HTML content with the given value
+    tempDivElement.innerHTML = html;
+
+    // Retrieve the text property of the element 
+    return tempDivElement.textContent || tempDivElement.innerText || "";
+  }
+
+  window.convertToExcel = (parsedData) => {
+    // Create a new workbook
+    var workbook = XLSX.utils.book_new();
+
+    var sheetData = parsedData.map(x => Object.values(x));
+
+    var sheet1 = XLSX.utils.aoa_to_sheet(sheetData);
+    XLSX.utils.book_append_sheet(workbook, sheet1, 'Emails');
+
+
+
+    // Export the workbook as an Excel file
+    //XLSX.writeFile(workbook, 'applications.xlsx');
+    var workbookData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+    var blob = new Blob([workbookData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    // Generate a download link
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'Job Applications.xlsx';
+    a.target = '_blank';
+
+    // Append the link to the document body and trigger the download
+    document.body.appendChild(a);
+    a.click();
+
+    // Clean up by revoking the object URL
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a)
+  }
+
+</script>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.cdnfonts.com/css/aileron" rel="stylesheet">
