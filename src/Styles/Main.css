@@ -69,3 +69,6 @@ label.MuiFormLabel-root{
     flex-direction:column;
 }
 
+.MuiFormGroup-root{
+    justify-content: space-between;
+}
