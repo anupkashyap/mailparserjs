@@ -18,7 +18,7 @@ mailparser.js is a web application built using React and JavaScript, designed to
 To set up and run the application on your local machine, follow these steps:
 
 1. Clone the repository: `git clone https://github.com/anupkashyap/mailparserjs.git`
-2. Change into the project directory: `mailparser.js`
+2. Change into the project directory: `mailparserjs`
 3. Install dependencies: `npm install`
 4. Replace the API keys in the `config.js` file with your own.
 5. Start the application: `npm start`
